@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"sync"
+	"time"
 
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 )
@@ -71,31 +73,61 @@ func main() {
 	b := &broadcast{log: map[float64][]string{}}
 
 	n.Handle("broadcast", func(msg maelstrom.Message) error {
-		var body struct {
+		type content struct {
 			Type        string   `json:"type"`
 			Message     *float64 `json:"message,omitempty"`
 			Broadcasted *string  `json:"broadcasted,omitempty"`
 		}
 
+		var body content
+
 		if err := json.Unmarshal(msg.Body, &body); err != nil {
 			return err
 		}
+
+		id := n.ID()
 
 		if body.Broadcasted != nil {
 			if b.received(*body.Message, *body.Broadcasted) {
 				return nil
 			}
 		} else {
-			b.received(*body.Message, n.ID())
+			b.received(*body.Message, id)
 		}
 
 		message := *body.Message
 		ms.insert(message)
 
-		id := n.ID()
-		body.Broadcasted = &id
-		for _, an := range net.accessible(n.ID()) {
-			n.RPC(an, body, func(msg maelstrom.Message) error { return nil })
+		bbody := content{
+			Type:        body.Type,
+			Message:     body.Message,
+			Broadcasted: new(string),
+		}
+		*bbody.Broadcasted = id
+		for _, an := range net.accessible(id) {
+			go func(an string) {
+				ok := make(chan struct{}, 1)
+
+				for {
+					ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+					defer cancel()
+
+					n.RPC(an, bbody, func(msg maelstrom.Message) error {
+						select {
+						case ok <- struct{}{}:
+						default:
+						}
+
+						return nil
+					})
+
+					select {
+					case <-ok:
+						return
+					case <-ctx.Done():
+					}
+				}
+			}(an)
 		}
 
 		body.Type = "broadcast_ok"
