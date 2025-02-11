@@ -99,10 +99,9 @@ func main() {
 
 	n.Handle("broadcast", func(msg maelstrom.Message) error {
 		type content struct {
-			Type         string               `json:"type"`
-			Message      *float64             `json:"message,omitempty"`
-			Broadcasted  *string              `json:"broadcasted,omitempty"`
-			Broadcastors *map[string]struct{} `json:"broadcastors,omitempty"`
+			Type        string   `json:"type"`
+			Message     *float64 `json:"message,omitempty"`
+			Broadcasted *string  `json:"broadcasted,omitempty"`
 		}
 
 		var body content
@@ -114,9 +113,8 @@ func main() {
 		id := n.ID()
 
 		var (
-			broadcasted  string
-			broadcastors map[string]struct{}
-			err          error
+			broadcasted string
+			err         error
 		)
 
 		if body.Broadcasted != nil {
@@ -125,34 +123,25 @@ func main() {
 			}
 
 			broadcasted = *body.Broadcasted
-			broadcastors = *body.Broadcastors
 		} else {
 			broadcasted, err = b.source(*body.Message, id)
 			if err != nil {
 				return err
 			}
 
-			broadcastors = map[string]struct{}{}
 		}
-		broadcastors[id] = struct{}{}
 
 		message := *body.Message
 		ms.insert(message)
 
 		bbody := content{
-			Type:         body.Type,
-			Message:      body.Message,
-			Broadcasted:  new(string),
-			Broadcastors: new(map[string]struct{}),
+			Type:        body.Type,
+			Message:     body.Message,
+			Broadcasted: new(string),
 		}
 		*bbody.Broadcasted = broadcasted
-		*bbody.Broadcastors = broadcastors
 		for _, an := range net.accessible(id) {
 			if b.received(broadcasted, an) {
-				continue
-			}
-
-			if _, ok := broadcastors[an]; ok {
 				continue
 			}
 
@@ -184,7 +173,6 @@ func main() {
 		body.Type = "broadcast_ok"
 		body.Message = nil
 		body.Broadcasted = nil
-		body.Broadcastors = nil
 
 		return n.Reply(msg, body)
 	})
