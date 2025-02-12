@@ -1,0 +1,4 @@
+github.com/jepsen-io/maelstrom/demo/go v0.0.0-20250204203845-8263d1dd2b7a h1:Y4T2rLnDS94/hFCdQYxb97SJObNcMJk6M1lJg3qCGZQ=
+github.com/jepsen-io/maelstrom/demo/go v0.0.0-20250204203845-8263d1dd2b7a/go.mod h1:i6aVIs5AIOOaQF1lAisBm7DDeWM1Iopf+26UxjagsCU=
+github.com/serialx/hashring v0.0.0-20200727003509-22c0c7ab6b1b h1:h+3JX2VoWTFuyQEo87pStk/a99dzIO1mM9KxIyLPGTU=
+github.com/serialx/hashring v0.0.0-20200727003509-22c0c7ab6b1b/go.mod h1:/yeG0My1xr/u+HZrFQ1tOQQQQrOawfyMUH13ai5brBc=
